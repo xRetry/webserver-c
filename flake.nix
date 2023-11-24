@@ -10,7 +10,9 @@
     utils.lib.eachDefaultSystem (
       system:
       let
-        p = import nixpkgs { inherit system; };
+        p = import nixpkgs { 
+            inherit system; 
+        };
         llvm = p.llvmPackages_latest;
 
         # simple script which replaces the functionality of make

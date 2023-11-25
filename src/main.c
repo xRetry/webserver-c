@@ -118,33 +118,38 @@ static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data,
     );
 }
 
-static void handle_pin_get(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void handle_pins_read(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
-    printf("get %s", ws_msg->data.ptr);
+    printf("read %s", ws_msg->data.ptr);
 }
 
-static void handle_pin_set(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void handle_pins_write(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
-    printf("set: %s", ws_msg->data.ptr);
+    printf("write: %s", ws_msg->data.ptr);
 }
 
-static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void router(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_http_match_uri(hm, "/config")) {
             handle_config(c, ev, ev_data, fn_data);
         } else if (mg_http_match_uri(hm, "/set-config")) {
             handle_set_config(c, ev, ev_data, fn_data);
-        } else if (mg_http_match_uri(hm, "/pin/get")) {
+        } else if (mg_http_match_uri(hm, "/pins/read")) {
+            c->data[0] = 'r';
             mg_ws_upgrade(c, hm, NULL);
-        } else if (mg_http_match_uri(hm, "/pin/set")) {
+        } else if (mg_http_match_uri(hm, "/pins/write")) {
+            c->data[0] = 'w';
             mg_ws_upgrade(c, hm, NULL);
         } else {
             mg_http_reply(c, 404, "Content-Type: text/html", "");
         }
     } else if (ev == MG_EV_WS_MSG) {
-        // TODO(marco): Figure out how to handle different uris
-        handle_pin_get(c, ev, ev_data, fn_data);
+        if (c->data[0] == 'r') {
+            handle_pins_read(c, ev, ev_data, fn_data);
+        } else if (c->data[0] == 'w') {
+            handle_pins_write(c, ev, ev_data, fn_data);
+        }
     }
 }
 
@@ -156,9 +161,11 @@ int main() {
     init_state();
 
     struct mg_mgr mgr;                                
-    mg_mgr_init(&mgr);                                      // Init manager
-    mg_http_listen(&mgr, "http://0.0.0.0:8000", fn, NULL);  // Setup listener
-    for (;;) mg_mgr_poll(&mgr, 1000);                       // Infinite event loop
+    mg_mgr_init(&mgr);
+    mg_http_listen(&mgr, "http://0.0.0.0:8000", router, NULL);
+    for (;;) {
+        mg_mgr_poll(&mgr, 300);
+    }
 
     return 0;
 }

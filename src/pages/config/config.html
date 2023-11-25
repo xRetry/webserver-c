@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Board Configuration</title>
+        <link rel="stylesheet" href="config.css">
+        <script src="config.js"></script>
+    </head>
+    <body>
+        <form method="post" action="set">
+            <label>Pin 1</label>
+            <select name="1">
+                <option value="0">Digital Input</option>
+                <option value="1">Digital Output</option>
+                <option value="2">Analog Input</option>
+                <option value="3">Analog Output</option>
+            </select>
+            <label>Pin 2</label>
+            <select name="2">
+                <option value="0">Digital Input</option>
+                <option value="1">Digital Output</option>
+                <option value="2">Analog Input</option>
+                <option value="3">Analog Output</option>
+            </select>
+            <input type="submit" value="Save"/>
+        </form>
+    </body>
+</html>

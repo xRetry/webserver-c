@@ -9,18 +9,18 @@ struct {
 } state;
 
 void save_config(int config[NUM_PINS]) {
-    FILE *fptr = fopen("config", "w");
-    for (int i=0; i<NUM_PINS; ++i) {
-        char mode[3];
-        snprintf(mode, 3, "%d\n", config[i]);
-
-        fprintf(fptr, mode, 3);
+    FILE *fptr = fopen("config", "wb");
+    if (fptr == NULL) {
+        printf("Error opening config file\n");
+        return;
     }
+
+    fwrite(config, sizeof(int), NUM_PINS, fptr);
     fclose(fptr);
 }
 
 void read_config(int config[NUM_PINS]) {
-    FILE *fptr = fopen("config", "r");
+    FILE *fptr = fopen("config", "rb");
     if (fptr == NULL) {
         for (int i=0; i<NUM_PINS; ++i) {
             config[i] = 0;
@@ -28,14 +28,9 @@ void read_config(int config[NUM_PINS]) {
         return;
     }
 
-    int i = 0;
-    char *line[3];
-    size_t len = 0;
-    ssize_t read;
-    while ((read = getline(line, &len, fptr)) != -1) {
-        char* end;
-        config[i] = strtol(*line, &end, 10);
-        ++i;
+    int ret = fread(config, sizeof(int), NUM_PINS, fptr);
+    if (ret != NUM_PINS) {
+        printf("Error reading file: %d\n", ret);
     }
     fclose(fptr);
 }

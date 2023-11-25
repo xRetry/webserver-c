@@ -116,9 +116,9 @@ static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data,
 
     mg_http_reply(
         conn, 
-        200, 
-        "Content-Type: text/plain\r\n", 
-        body.ptr
+        303, 
+        "Location: /config\r\n", 
+        ""
     );
 }
 

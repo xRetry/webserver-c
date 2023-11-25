@@ -4,6 +4,10 @@
 #define QUOTE(...) #__VA_ARGS__
 #define NUM_PINS 10
 
+struct {
+    int modes[NUM_PINS];
+} state;
+
 void save_config(int config[NUM_PINS]) {
     FILE *fptr = fopen("config", "w");
     for (int i=0; i<NUM_PINS; ++i) {
@@ -84,7 +88,6 @@ static void handle_config(struct mg_connection *conn, int ev, void *ev_data, voi
     );
 };
 
-
 static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
     struct mg_str body = hm->body;
@@ -107,21 +110,23 @@ static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data,
 
     save_config(config);
 
-    int config2[NUM_PINS];
-    read_config(config2);
-
-    for (int i=0; i<NUM_PINS; ++i) {
-        printf("pin %d: %d\n", i, config2[i]);
-    }
-
     mg_http_reply(
         conn, 
-        303, 
+        303, // `See Other`
         "Location: /config\r\n", 
         ""
     );
 }
 
+static void handle_pin_get(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+    struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
+    printf("get %s", ws_msg->data.ptr);
+}
+
+static void handle_pin_set(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+    struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
+    printf("set: %s", ws_msg->data.ptr);
+}
 
 static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     if (ev == MG_EV_HTTP_MSG) {
@@ -130,13 +135,25 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
             handle_config(c, ev, ev_data, fn_data);
         } else if (mg_http_match_uri(hm, "/set-config")) {
             handle_set_config(c, ev, ev_data, fn_data);
+        } else if (mg_http_match_uri(hm, "/pin/get")) {
+            mg_ws_upgrade(c, hm, NULL);
+        } else if (mg_http_match_uri(hm, "/pin/set")) {
+            mg_ws_upgrade(c, hm, NULL);
         } else {
             mg_http_reply(c, 404, "Content-Type: text/html", "");
         }
+    } else if (ev == MG_EV_WS_MSG) {
+        // TODO(marco): Figure out how to handle different uris
+        handle_pin_get(c, ev, ev_data, fn_data);
     }
 }
 
+void init_state() {
+    read_config(state.modes);
+}
+
 int main() {
+    init_state();
 
     struct mg_mgr mgr;                                
     mg_mgr_init(&mgr);                                      // Init manager

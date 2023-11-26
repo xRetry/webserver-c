@@ -11,6 +11,29 @@ struct {
     int modes[NUM_PINS];
 } state;
 
+uint allowed_modes[NUM_PINS];
+
+void init_allowed(void) {
+    for (int i=0; i<NUM_PINS; ++i) {
+        allowed_modes[i] = 0;
+    }
+
+    const uint disabled[] = {0, 3, 4};
+    for (int i=0; i<sizeof(disabled)/sizeof(uint); ++i) {
+        allowed_modes[i] |= 1<<0;
+    }
+
+    const uint dig_inp[] = {0, 3, 4};
+    for (int i=0; i<sizeof(dig_inp)/sizeof(uint); ++i) {
+        allowed_modes[i] |= 1<<1;
+    }
+
+    const uint dig_out[] = {0, 3};
+    for (int i=0; i<sizeof(dig_out)/sizeof(uint); ++i) {
+        allowed_modes[i] |= 1<<2;
+    }
+}
+
 void save_config(int config[NUM_PINS]) {
     FILE *fptr = fopen("config", "wb");
     if (fptr == NULL) {
@@ -39,22 +62,21 @@ void read_config(int config[NUM_PINS]) {
 }
 
 static void handle_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
-
     char pins[NUM_CHARS_JS] = "const PINS = [";
     for (int i=0; i<NUM_PINS; ++i) {
-        //TODO(marco): Insert condition for invalid pins
-        if (false) { continue; }
-        printf("%d\n", state.modes[i]);
+        if (allowed_modes[i] == 0) { continue; }
 
         char pin[2];
         snprintf(pin, 2, "%d", i);
         char mode[3];
         snprintf(mode, 3, "%d", state.modes[i]);
+        char allowed[3];
+        snprintf(allowed, 3, "%d", allowed_modes[i]);
 
         char str[18] = "[";
         strcat(str, pin);
         strcat(str, ",");
-        strcat(str, "31");
+        strcat(str, allowed);
         strcat(str, ",");
         strcat(str, mode);
         strcat(str, "],");
@@ -92,7 +114,7 @@ static void handle_config(struct mg_connection *conn, int ev, void *ev_data, voi
                 for (const [num, modes, mode] of PINS.reverse()) {
                     let select = `<select name="${num}">`;
                     let i = 0;
-                    for (const m of modes.toString(2)) {
+                    for (const m of modes.toString(2).split('').reverse()) {
                         const sel = i === mode ? ' selected' : '';
                         if (m > 0) { select += `<option value="${i}"${sel}>${MODE_DESCS[i]}</option>`; }
                         ++i;
@@ -187,6 +209,7 @@ void init_state() {
 
 int main() {
     init_state();
+    init_allowed();
 
     struct mg_mgr mgr;                                
     mg_mgr_init(&mgr);

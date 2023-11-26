@@ -44,6 +44,7 @@ static void handle_config(struct mg_connection *conn, int ev, void *ev_data, voi
     for (int i=0; i<NUM_PINS; ++i) {
         //TODO(marco): Insert condition for invalid pins
         if (false) { continue; }
+        printf("%d\n", state.modes[i]);
 
         char pin[2];
         snprintf(pin, 2, "%d", i);
@@ -67,11 +68,6 @@ static void handle_config(struct mg_connection *conn, int ev, void *ev_data, voi
         <html lang="en">
             <head>
                 <title>Board Configuration</title>
-                <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0" />
-                <meta http-equiv="cache-control" content="max-age=0" />
-                <meta http-equiv="expires" content="0" />
-                <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
-                <meta http-equiv="pragma" content="no-cache" />
                 <style>
                     form {
                         display: grid;
@@ -116,8 +112,7 @@ static void handle_config(struct mg_connection *conn, int ev, void *ev_data, voi
     mg_http_reply(
         conn, 
         200, 
-        // TODO(marco): Disable cache after redirect
-        "Content-Type: text/html\r\nCache-Control: no-store, must-revalidate\r\nExpires: 0\r\n", 
+        "Content-Type: text/html\r\n", 
         content
     );
 };
@@ -126,7 +121,6 @@ static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data,
     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
     struct mg_str body = hm->body;
     
-    int config[NUM_PINS];
     for (int i=0; i<NUM_PINS; ++i) {
         char key[3];
         snprintf(key, 3, "%d", i);
@@ -138,11 +132,11 @@ static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data,
             mode = strtol(val.ptr, &end, 10);
 
         }
-        config[i] = mode;
+        state.modes[i] = mode;
         printf("%d - %d\n", i, mode);
     }
 
-    save_config(config);
+    save_config(state.modes);
 
     mg_http_reply(
         conn, 

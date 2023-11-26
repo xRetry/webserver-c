@@ -8,7 +8,7 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 
-add_executable(${PROJECT_NAME} src/main.c include/mongoose.c)
+add_executable(${PROJECT_NAME} src/main.c src/webserver.c src/utils.c src/board.c include/mongoose.c)
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE

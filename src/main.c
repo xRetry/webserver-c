@@ -2,7 +2,10 @@
 #include <stdio.h>
 
 #define QUOTE(...) #__VA_ARGS__
+
+#define TEMPLATE_HTML QUOTE()
 #define NUM_PINS 10
+#define NUM_CHARS_JS 17 + NUM_PINS * 18
 
 struct {
     int modes[NUM_PINS];
@@ -36,50 +39,86 @@ void read_config(int config[NUM_PINS]) {
 }
 
 static void handle_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
+
+    char pins[NUM_CHARS_JS] = "const PINS = [";
+    for (int i=0; i<NUM_PINS; ++i) {
+        //TODO(marco): Insert condition for invalid pins
+        if (false) { continue; }
+
+        char pin[2];
+        snprintf(pin, 2, "%d", i);
+        char mode[3];
+        snprintf(mode, 3, "%d", state.modes[i]);
+
+        char str[18] = "[";
+        strcat(str, pin);
+        strcat(str, ",");
+        strcat(str, "31");
+        strcat(str, ",");
+        strcat(str, mode);
+        strcat(str, "],");
+
+        strcat(pins, str);
+    }
+    strcat(pins, "];");
+
+    char template[] = QUOTE(
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <title>Board Configuration</title>
+                <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0" />
+                <meta http-equiv="cache-control" content="max-age=0" />
+                <meta http-equiv="expires" content="0" />
+                <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+                <meta http-equiv="pragma" content="no-cache" />
+                <style>
+                    form {
+                        display: grid;
+                        grid-template-columns: 1fr 2fr;
+                        gap: 10px;
+                        width: 300px;
+                        margin-top: 30px;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                </style>
+            </head>
+            <body>
+                <form method="post" action="set-config">
+                    <input type="submit" value="Save"/>
+                </form>
+            <script>
+                %s
+                const MODE_DESCS = ['Disabled', 'Digital Input', 'Digital Output', 'Analog Input', 'Analog Output'];
+
+                let form = document.querySelector('form');
+                for (const [num, modes, mode] of PINS.reverse()) {
+                    let select = `<select name="${num}">`;
+                    let i = 0;
+                    for (const m of modes.toString(2)) {
+                        const sel = i === mode ? ' selected' : '';
+                        if (m > 0) { select += `<option value="${i}"${sel}>${MODE_DESCS[i]}</option>`; }
+                        ++i;
+                    }
+
+                    form.insertAdjacentHTML('afterbegin', select+'</select>');
+                    form.insertAdjacentHTML('afterbegin', `<label>Pin ${num}</label>`);
+                }
+            </script>
+            </body>
+        </html>
+    );
+
+    char content[strlen(template)+NUM_CHARS_JS];
+    snprintf(content, strlen(template)+NUM_CHARS_JS, template, pins);
+
     mg_http_reply(
         conn, 
         200, 
-        "Content-Type: text/html\r\n", 
-        QUOTE(
-            <!DOCTYPE html>
-            <html lang="en">
-                <head>
-                    <title>Board Configuration</title>
-                    <style>
-                        form {
-                            display: grid;
-                            grid-template-columns: 1fr 2fr;
-                            gap: 10px;
-                            width: 300px;
-                            margin-top: 30px;
-                            margin-left: auto;
-                            margin-right: auto;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <form method="post" action="set-config">
-                        <label>Pin 1</label>
-                        <select name="1">
-                            <option value="0">Disabled</option>
-                            <option value="1">Digital Input</option>
-                            <option value="2">Digital Output</option>
-                            <option value="3">Analog Input</option>
-                            <option value="4">Analog Output</option>
-                        </select>
-                        <label>Pin 2</label>
-                        <select name="2">
-                            <option value="0">Disabled</option>
-                            <option value="1">Digital Input</option>
-                            <option value="2">Digital Output</option>
-                            <option value="3">Analog Input</option>
-                            <option value="4">Analog Output</option>
-                        </select>
-                        <input type="submit" value="Save"/>
-                    </form>
-                </body>
-            </html>
-        )
+        // TODO(marco): Disable cache after redirect
+        "Content-Type: text/html\r\nCache-Control: no-store, must-revalidate\r\nExpires: 0\r\n", 
+        content
     );
 };
 

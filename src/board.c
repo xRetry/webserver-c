@@ -33,7 +33,7 @@ void allowed_init(void) {
 }
 
 void state_init(void) {
-    err_t err = utils_read_binary("modes", board.state.modes, sizeof(board.state.modes));
+    err_t err = utils_read_binary("modes", board.state.modes, sizeof(pin_mode_t), NUM_PINS);
     if (err != 0) {
         for (int i=0; i<NUM_PINS; ++i) {
             board.state.modes[i] = 0;
@@ -60,7 +60,7 @@ void board_set_pin_modes(const pin_mode_t new_modes[NUM_PINS]) {
     for (int i=0; i<NUM_PINS; ++i) {
         board.state.modes[i] = new_modes[i];
     }
-    utils_write_binary("modes", board.state.modes, sizeof(board.state.modes));
+    utils_write_binary("modes", board.state.modes, sizeof(pin_mode_t), NUM_PINS);
 }
 
 void board_to_html(char content[NUM_CHARS_HTML]) {

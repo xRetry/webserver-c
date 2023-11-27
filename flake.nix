@@ -36,6 +36,7 @@
       in
       {
         devShell = p.mkShell.override { stdenv = p.clangStdenv; } rec {
+          name = "C";
           packages = with p; [
             # builder
             gnumake
@@ -66,7 +67,10 @@
             SDL2
             SDL2_gfx
           ];
-          name = "C";
+
+          shellHook = ''
+            tmux -L sefsafs
+          '';
         };
       }
     );

@@ -1,11 +1,25 @@
 #include "constants.h"
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+err_t utils_string_to_long(const char *str, long *num) {
+    errno = 0;
+    char *endptr = NULL;
+    *num = strtol(str, &endptr, 10);
+    if (errno == 0 && str && !*endptr) {
+        return 0;
+    } else if (errno == 0 && str && *endptr != 0) {
+        return 0;
+    }
+    return 1;
+}
 
 err_t utils_write_binary(char *path, void *content, uint32_t length) {
     FILE *fptr = fopen(path, "wb");
     if (fptr == NULL) {
-        printf("Error opening config file\n");
+        printf("Error opening file `%s`\n", path);
         return 1;
     }
 
@@ -15,14 +29,15 @@ err_t utils_write_binary(char *path, void *content, uint32_t length) {
 }
 
 err_t utils_read_binary(char *path, void *content, uint32_t length) {
-    FILE *fptr = fopen("config", "rb");
+    FILE *fptr = fopen(path, "rb");
     if (fptr == NULL) {
+        printf("Error opening file `%s`\n", path);
         return 1;
     }
 
     int ret = fread(content, length, 1, fptr);
     if (ret != NUM_PINS) {
-        printf("Error reading file: %d\n", ret);
+        printf("Error reading file `%s`: %d\n", path, ret);
         return 1;
     }
     fclose(fptr);

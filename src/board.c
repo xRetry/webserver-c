@@ -46,18 +46,14 @@ void board_init(void) {
     state_init();
 }
 
-void set_mode(pin_t pin_nr, pin_mode_t pin_mode) {
-}
-
-void read_pin(pin_t pin_nr) {
+err_t board_pin_operation(pin_t pin_nr, double *val) {
     if (pin_nr >= NUM_PINS) {
-        return;
+        return 1;
     }
 
-    int is_allowed = (board.allowed_modes[pin_nr] >> pin_nr) & 1;
-    if (is_allowed) {
-        
-    }
+    // TODO(marco): Implement proper function routing
+    *val = pin_nr;
+    return 0;
 }
 
 void board_set_pin_modes(const pin_mode_t new_modes[NUM_PINS]) {

@@ -30,6 +30,22 @@ static void handle_pins_write(struct mg_connection *c, int ev, void *ev_data, vo
     printf("write: %s", ws_msg->data.ptr);
 }
 
+static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+    struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
+    printf("write: %s", ws_msg->data.ptr);
+    
+    for (int i=0; i<NUM_PINS; ++i) {
+        char search_str[13];
+        snprintf(search_str, 13, "$.write.%d", i);
+
+        double val;
+        if (!mg_json_get_num(ws_msg->data, search_str, &val)) { continue; }
+
+        printf("%f\n", val);
+    }
+
+}
+
 static void handle_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
     char content[NUM_CHARS_HTML];
     board_to_html(content);
@@ -95,6 +111,9 @@ static void router(struct mg_connection *c, int ev, void *ev_data, void *fn_data
             handle_ws_request(c, hm, 'r', params);
         } else if (mg_match(hm->uri, mg_str("/pins/write/*"), params)) {
             handle_ws_request(c, hm, 'w', params);
+        } else if (mg_http_match_uri(hm, "/pins/json")) {
+            c->data[0] = 'j';
+            mg_ws_upgrade(c, hm, NULL);
         } else {
             mg_http_reply(c, 404, "Content-Type: text/html", "");
         }
@@ -103,6 +122,8 @@ static void router(struct mg_connection *c, int ev, void *ev_data, void *fn_data
             handle_pins_read(c, ev, ev_data, fn_data);
         } else if (c->data[0] == 'w') {
             handle_pins_write(c, ev, ev_data, fn_data);
+        } else if (c->data[0] == 'j') {
+            handle_pins_json(c, ev, ev_data, fn_data);
         }
     }
 }

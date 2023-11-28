@@ -7,8 +7,7 @@
   };
 
   outputs = { self, nixpkgs, utils, ... }@inputs:
-    utils.lib.eachDefaultSystem (
-      system:
+    utils.lib.eachDefaultSystem (system:
       let
         p = import nixpkgs { 
             inherit system; 
@@ -33,8 +32,15 @@
           shift
           $c -ggdb $i -o $o -lm -Wall $@
         '';
-      in
-      {
+
+        #webserver-c = p.writeScriptBin "webserver-c" ''
+        #    mkdir -p build && cd build && cmake .. && make && ./webserver-c
+        #'';
+
+      in {
+
+        #packages.default = webserver-c;
+
         devShell = p.mkShell.override { stdenv = p.clangStdenv; } rec {
           name = "C";
           packages = with p; [

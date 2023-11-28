@@ -32,7 +32,6 @@ static void handle_pins_write(struct mg_connection *c, int ev, void *ev_data, vo
 
 static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
-    printf("write: %s", ws_msg->data.ptr);
     
     for (int i=0; i<NUM_PINS; ++i) {
         char search_str[13];
@@ -41,8 +40,36 @@ static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, voi
         double val;
         if (!mg_json_get_num(ws_msg->data, search_str, &val)) { continue; }
 
-        printf("%f\n", val);
+        board_pin_operation(i, &val);
+        printf("write to pin `%d`: %f\n", i, val);
     }
+
+    char response[20*NUM_PINS+3] = "{";
+    int num_added = 0;
+    for (int i=0; i<NUM_PINS; ++i) {
+        char search_str[13];
+        snprintf(search_str, 13, "$.read.%d", i);
+
+        double val;
+        if (!mg_json_get_num(ws_msg->data, search_str, &val)) { continue; }
+
+        board_pin_operation(i, &val);
+
+        char fmt[] = ",\"%d\":%.10g";
+        if (num_added == 0) {
+            fmt[0] = ' ';
+        }
+
+        char buf[20]; 
+        snprintf(buf, sizeof(buf), fmt, i, val);
+        strcat(response, buf);
+
+        ++num_added;
+    }
+
+    strcat(response, " }");
+
+    mg_ws_send(c, response, strlen(response), WEBSOCKET_OP_TEXT);
 
 }
 

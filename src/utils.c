@@ -16,6 +16,18 @@ err_t utils_string_to_long(const char *str, long *num) {
     return 1;
 }
 
+err_t utils_string_to_double(const char *str, double *num) {
+    errno = 0;
+    char *endptr = NULL;
+    *num = strtod(str, &endptr);
+    if (errno == 0 && str && !*endptr) {
+        return 0;
+    } else if (errno == 0 && str && *endptr != 0) {
+        return 0;
+    }
+    return 1;
+}
+
 err_t utils_write_binary(char *path, void *content, uint32_t size, uint32_t n) {
     FILE *fptr = fopen(path, "wb");
     if (fptr == NULL) {

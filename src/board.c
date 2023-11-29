@@ -53,6 +53,8 @@ err_t board_pin_operation(pin_t pin_nr, double *val) {
 
     // TODO(marco): Implement proper function routing
     *val = pin_nr;
+
+    printf("pin op: %d - %f\n", pin_nr, *val);
     return 0;
 }
 

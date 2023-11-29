@@ -33,38 +33,54 @@ static void handle_pins_write(struct mg_connection *c, int ev, void *ev_data, vo
 static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
     
-    for (int i=0; i<NUM_PINS; ++i) {
-        char search_str[13];
-        snprintf(search_str, 13, "$.write.%d", i);
+    int offset, length;
+    if ((offset = mg_json_get(ws_msg->data, "$.write", &length)) >= 0) {
+        struct mg_str write = mg_str_n(&ws_msg->data.ptr[offset], length);
 
-        double val;
-        if (!mg_json_get_num(ws_msg->data, search_str, &val)) { continue; }
+        struct mg_str key, val;
+        offset = 0;
+        while ((offset = mg_json_next(write, offset, &key, &val)) > 0) {
+            if (val.ptr == NULL) { continue; }
 
-        board_pin_operation(i, &val);
-        printf("write to pin `%d`: %f\n", i, val);
+            long pin_nr;
+            if (utils_string_to_long(key.ptr+1, &pin_nr)) { continue; }
+
+            double pin_val;
+            if (utils_string_to_double(val.ptr, &pin_val)) { continue; }
+
+            board_pin_operation(pin_nr, &pin_val);
+        }
     }
 
     char response[20*NUM_PINS+3] = "{";
-    int num_added = 0;
-    for (int i=0; i<NUM_PINS; ++i) {
-        char search_str[13];
-        snprintf(search_str, 13, "$.read.%d", i);
 
-        double val;
-        if (!mg_json_get_num(ws_msg->data, search_str, &val)) { continue; }
+    bool isFirst = true;
+    offset = mg_json_get(ws_msg->data, "$.read", &length);
+    if (offset >= 0) {
+        struct mg_str read = mg_str_n(&ws_msg->data.ptr[offset], length);
 
-        board_pin_operation(i, &val);
+        struct mg_str key, val;
+        offset = 0;
+        while ((offset = mg_json_next(read, offset, &key, &val)) > 0) {
+            if (val.ptr == NULL) { continue; }
 
-        char fmt[] = ",\"%d\":%.10g";
-        if (num_added == 0) {
-            fmt[0] = ' ';
+            long pin_nr;
+            if (utils_string_to_long(val.ptr, &pin_nr) > 0) { continue; }
+
+
+            double pin_val;
+            board_pin_operation(pin_nr, &pin_val);
+
+            char fmt[] = ",\"%d\":%.10g";
+            if (isFirst) {
+                fmt[0] = ' ';
+                isFirst = false;
+            }
+
+            char buf[20]; 
+            snprintf(buf, sizeof(buf), fmt, pin_nr, pin_val);
+            strcat(response, buf);
         }
-
-        char buf[20]; 
-        snprintf(buf, sizeof(buf), fmt, i, val);
-        strcat(response, buf);
-
-        ++num_added;
     }
 
     strcat(response, " }");

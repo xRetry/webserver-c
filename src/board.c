@@ -3,13 +3,36 @@
 #include "board.h"
 #include "utils.h"
 
+
 struct board_t {
     struct state_t {
         pin_mode_t modes[NUM_PINS];
     } state;
+    void (*pin_functions[NUM_PINS])(pin_t, double*);
 
     pin_mode_t allowed_modes[NUM_PINS];
 } board;
+
+void digital_write(pin_t pin_nr, double *val) {
+    printf("digital_write: pin=%d, val=%f", pin_nr, *val);
+}
+
+void set_digital_write(pin_t pin_nr) {
+    board.pin_functions[pin_nr] = digital_write;
+}
+
+void digital_read(pin_t pin_nr, double *val) {
+    printf("digital_read: pin=%d, val=%f", pin_nr, *val);
+}
+
+void set_digital_read(pin_t pin_nr) {
+    board.pin_functions[pin_nr] = digital_read;
+}
+
+void (*const PIN_MODE_FUNCTIONS[])(pin_t) = {
+
+
+};
 
 void allowed_init(void) {
     for (int i=0; i<NUM_PINS; ++i) {

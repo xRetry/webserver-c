@@ -9,8 +9,8 @@
 
 #define QUOTE(...) #__VA_ARGS__
 
-typedef uint8_t pin_mode_t;
-typedef uint8_t pin_t;
+typedef uint8_t pin_mode_nr_t;
+typedef uint8_t pin_nr_t;
 typedef uint8_t err_t;
 
 #define HTML_TEMPLATE "\

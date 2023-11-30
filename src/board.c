@@ -3,60 +3,34 @@
 #include "board.h"
 #include "utils.h"
 
+#include "pin_modes.h"
 
 struct board_t {
     struct state_t {
-        pin_mode_t modes[NUM_PINS];
+        pin_mode_nr_t modes[NUM_PINS];
     } state;
-    void (*pin_functions[NUM_PINS])(pin_t, double*);
+    err_t (*pin_functions[NUM_PINS])(pin_nr_t, double*);
 
-    pin_mode_t allowed_modes[NUM_PINS];
+    pin_mode_nr_t allowed_modes[NUM_PINS];
+
 } board;
-
-void digital_write(pin_t pin_nr, double *val) {
-    printf("digital_write: pin=%d, val=%f", pin_nr, *val);
-}
-
-void set_digital_write(pin_t pin_nr) {
-    board.pin_functions[pin_nr] = digital_write;
-}
-
-void digital_read(pin_t pin_nr, double *val) {
-    printf("digital_read: pin=%d, val=%f", pin_nr, *val);
-}
-
-void set_digital_read(pin_t pin_nr) {
-    board.pin_functions[pin_nr] = digital_read;
-}
-
-void (*const PIN_MODE_FUNCTIONS[])(pin_t) = {
-
-
-};
 
 void allowed_init(void) {
     for (int i=0; i<NUM_PINS; ++i) {
         board.allowed_modes[i] = 0;
     }
 
-    const pin_mode_t disabled[] = {0, 3, 4};
-    for (int i=0; i<sizeof(disabled)/sizeof(pin_mode_t); ++i) {
-        board.allowed_modes[i] |= 1<<0;
-    }
-
-    const pin_mode_t dig_inp[] = {0, 3, 4};
-    for (int i=0; i<sizeof(dig_inp)/sizeof(pin_mode_t); ++i) {
-        board.allowed_modes[i] |= 1<<1;
-    }
-
-    const pin_mode_t dig_out[] = {0, 3};
-    for (int i=0; i<sizeof(dig_out)/sizeof(pin_mode_t); ++i) {
-        board.allowed_modes[i] |= 1<<2;
+    for (int i=0; i<NUM_MODES; ++i) {
+        struct pin_mode_t pin_mode = pin_modes[i];
+        for (int j=0; j<pin_mode.pins_allowed_size; ++j) {
+            board.allowed_modes[j] |= 1<<i;
+            board.pin_functions[j] = pin_mode.fn_rw;
+        }
     }
 }
 
 void state_init(void) {
-    err_t err = utils_read_binary("modes", board.state.modes, sizeof(pin_mode_t), NUM_PINS);
+    err_t err = utils_read_binary("modes", board.state.modes, sizeof(pin_mode_nr_t), NUM_PINS);
     if (err != 0) {
         for (int i=0; i<NUM_PINS; ++i) {
             board.state.modes[i] = 0;
@@ -69,7 +43,7 @@ void board_init(void) {
     state_init();
 }
 
-err_t board_pin_operation(pin_t pin_nr, double *val) {
+err_t board_pin_operation(pin_nr_t pin_nr, double *val) {
     if (pin_nr >= NUM_PINS) {
         return 1;
     }
@@ -81,11 +55,13 @@ err_t board_pin_operation(pin_t pin_nr, double *val) {
     return 0;
 }
 
-void board_set_pin_modes(const pin_mode_t new_modes[NUM_PINS]) {
+void board_set_pin_modes(const pin_mode_nr_t new_modes[NUM_PINS]) {
     for (int i=0; i<NUM_PINS; ++i) {
         board.state.modes[i] = new_modes[i];
+        // TODO(marco): Figure out why setup function is not called
+        (pin_modes[new_modes[i]].fn_set)(i);
     }
-    utils_write_binary("modes", board.state.modes, sizeof(pin_mode_t), NUM_PINS);
+    utils_write_binary("modes", board.state.modes, sizeof(pin_mode_nr_t), NUM_PINS);
 }
 
 void board_to_html(char content[NUM_CHARS_HTML]) {

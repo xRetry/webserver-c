@@ -37,8 +37,11 @@
 #define ALLOWED_PINS(...) {__VA_ARGS__}, .pins_allowed_size=NUM_ARGS(__VA_ARGS__)
 #define REGISTER_MODE(n, s, rw, a) { .name=n, .fn_init=s, .fn_rw=rw, .pins_allowed=a }
 
+#define LEN_MODE_NAME 50
+#define NUM_MODES 3
+
 struct pin_mode_t {
-    char *name;
+    char name[LEN_MODE_NAME];
     err_t (*fn_init)(pin_mode_nr_t);
     err_t (*fn_rw)(pin_nr_t, double*);
     int pins_allowed[NUM_PINS];
@@ -47,6 +50,6 @@ struct pin_mode_t {
 
 extern const struct pin_mode_t PIN_MODES[];
 
-extern const int NUM_MODES;
+//extern const int NUM_MODES;
 
 #endif

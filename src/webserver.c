@@ -90,7 +90,7 @@ static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, voi
 }
 
 static void handle_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
-    char content[NUM_CHARS_HTML];
+    char content[LEN_HTML_TEMPLATE];
     board_to_html(content);
     mg_http_reply(
         conn, 
@@ -120,7 +120,7 @@ static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data,
         modes[i] = mode;
     }
 
-    board_set_pin_modes(modes);
+    board_init_pin_modes(modes);
 
     mg_http_reply(
         conn, 

@@ -1,28 +1,38 @@
 [
-  {
-    "arguments": [
-      "/nix/store/zlzz2z48s7ry0hkl55xiqp5a73b4mzrg-gcc-wrapper-12.3.0/bin/gcc",
-      "-I/home/marco/coding/webserver-c/include",
-      "-c",
-      "-o",
-      "CMakeFiles/webserver-c.dir/src/main.c.o",
-      "/home/marco/coding/webserver-c/src/main.c"
-    ],
-    "directory": "/home/marco/coding/webserver-c/build",
-    "file": "/home/marco/coding/webserver-c/src/main.c",
-    "output": "/home/marco/coding/webserver-c/build/CMakeFiles/webserver-c.dir/src/main.c.o"
-  },
-  {
-    "arguments": [
-      "/nix/store/zlzz2z48s7ry0hkl55xiqp5a73b4mzrg-gcc-wrapper-12.3.0/bin/gcc",
-      "-I/home/marco/coding/webserver-c/include",
-      "-c",
-      "-o",
-      "CMakeFiles/webserver-c.dir/include/mongoose.c.o",
-      "/home/marco/coding/webserver-c/include/mongoose.c"
-    ],
-    "directory": "/home/marco/coding/webserver-c/build",
-    "file": "/home/marco/coding/webserver-c/include/mongoose.c",
-    "output": "/home/marco/coding/webserver-c/build/CMakeFiles/webserver-c.dir/include/mongoose.c.o"
-  }
+{
+  "directory": "/home/marco/coding/webserver-c/build",
+  "command": "/nix/store/i80k2s7lczrgr7s0dqlh1g9hhbc7gknj-clang-wrapper-16.0.6/bin/clang  -I/home/marco/coding/webserver-c/include  -o CMakeFiles/webserver-c.dir/src/main.c.o -c /home/marco/coding/webserver-c/src/main.c",
+  "file": "/home/marco/coding/webserver-c/src/main.c",
+  "output": "CMakeFiles/webserver-c.dir/src/main.c.o"
+},
+{
+  "directory": "/home/marco/coding/webserver-c/build",
+  "command": "/nix/store/i80k2s7lczrgr7s0dqlh1g9hhbc7gknj-clang-wrapper-16.0.6/bin/clang  -I/home/marco/coding/webserver-c/include  -o CMakeFiles/webserver-c.dir/src/webserver.c.o -c /home/marco/coding/webserver-c/src/webserver.c",
+  "file": "/home/marco/coding/webserver-c/src/webserver.c",
+  "output": "CMakeFiles/webserver-c.dir/src/webserver.c.o"
+},
+{
+  "directory": "/home/marco/coding/webserver-c/build",
+  "command": "/nix/store/i80k2s7lczrgr7s0dqlh1g9hhbc7gknj-clang-wrapper-16.0.6/bin/clang  -I/home/marco/coding/webserver-c/include  -o CMakeFiles/webserver-c.dir/src/utils.c.o -c /home/marco/coding/webserver-c/src/utils.c",
+  "file": "/home/marco/coding/webserver-c/src/utils.c",
+  "output": "CMakeFiles/webserver-c.dir/src/utils.c.o"
+},
+{
+  "directory": "/home/marco/coding/webserver-c/build",
+  "command": "/nix/store/i80k2s7lczrgr7s0dqlh1g9hhbc7gknj-clang-wrapper-16.0.6/bin/clang  -I/home/marco/coding/webserver-c/include  -o CMakeFiles/webserver-c.dir/src/board.c.o -c /home/marco/coding/webserver-c/src/board.c",
+  "file": "/home/marco/coding/webserver-c/src/board.c",
+  "output": "CMakeFiles/webserver-c.dir/src/board.c.o"
+},
+{
+  "directory": "/home/marco/coding/webserver-c/build",
+  "command": "/nix/store/i80k2s7lczrgr7s0dqlh1g9hhbc7gknj-clang-wrapper-16.0.6/bin/clang  -I/home/marco/coding/webserver-c/include  -o CMakeFiles/webserver-c.dir/src/pin_modes.c.o -c /home/marco/coding/webserver-c/src/pin_modes.c",
+  "file": "/home/marco/coding/webserver-c/src/pin_modes.c",
+  "output": "CMakeFiles/webserver-c.dir/src/pin_modes.c.o"
+},
+{
+  "directory": "/home/marco/coding/webserver-c/build",
+  "command": "/nix/store/i80k2s7lczrgr7s0dqlh1g9hhbc7gknj-clang-wrapper-16.0.6/bin/clang  -I/home/marco/coding/webserver-c/include  -o CMakeFiles/webserver-c.dir/include/mongoose.c.o -c /home/marco/coding/webserver-c/include/mongoose.c",
+  "file": "/home/marco/coding/webserver-c/include/mongoose.c",
+  "output": "CMakeFiles/webserver-c.dir/include/mongoose.c.o"
+}
 ]

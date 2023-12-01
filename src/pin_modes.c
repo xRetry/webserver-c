@@ -36,4 +36,4 @@ const struct pin_mode_t PIN_MODES[] = {
     REGISTER_MODE("Digital Read", init_digital_read, digital_read, ALLOWED_PINS(4, 5)),
 };
 
-const int NUM_MODES = sizeof(PIN_MODES)/sizeof(struct pin_mode_t);
+//const int NUM_MODES = sizeof(PIN_MODES)/sizeof(struct pin_mode_t);

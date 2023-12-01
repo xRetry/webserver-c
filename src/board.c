@@ -9,7 +9,7 @@ struct board_t {
     struct state_t {
         pin_mode_nr_t modes[NUM_PINS];
     } state;
-    err_t (*pin_functions[NUM_PINS])(pin_nr_t, double*);
+    err_t (*rw_functions[NUM_PINS])(pin_nr_t, double*);
 
     pin_mode_nr_t allowed_modes[NUM_PINS];
 
@@ -21,10 +21,10 @@ void allowed_init(void) {
     }
 
     for (int i=0; i<NUM_MODES; ++i) {
-        struct pin_mode_t pin_mode = pin_modes[i];
+        struct pin_mode_t pin_mode = PIN_MODES[i];
         for (int j=0; j<pin_mode.pins_allowed_size; ++j) {
             board.allowed_modes[j] |= 1<<i;
-            board.pin_functions[j] = pin_mode.fn_rw;
+            // TODO(marco)
         }
     }
 }
@@ -38,18 +38,24 @@ void state_init(void) {
     }
 }
 
+void modes_init(void) {
+    for (int i=0; i<NUM_PINS; ++i) {
+        struct pin_mode_t pin_mode = PIN_MODES[board.state.modes[i]];
+        pin_mode.fn_init(i);
+        board.rw_functions[i] = pin_mode.fn_rw;
+    }
+}
+
 void board_init(void) {
     allowed_init();
     state_init();
+    modes_init();
 }
 
 err_t board_pin_operation(pin_nr_t pin_nr, double *val) {
-    if (pin_nr >= NUM_PINS) {
-        return 1;
-    }
+    if (pin_nr >= NUM_PINS) { return 1; }
 
-    // TODO(marco): Implement proper function routing
-    *val = pin_nr;
+    board.rw_functions[pin_nr](pin_nr, val);
 
     printf("pin op: %d - %f\n", pin_nr, *val);
     return 0;
@@ -58,8 +64,9 @@ err_t board_pin_operation(pin_nr_t pin_nr, double *val) {
 void board_set_pin_modes(const pin_mode_nr_t new_modes[NUM_PINS]) {
     for (int i=0; i<NUM_PINS; ++i) {
         board.state.modes[i] = new_modes[i];
-        // TODO(marco): Figure out why setup function is not called
-        (pin_modes[new_modes[i]].fn_set)(i);
+        struct pin_mode_t pin_mode = PIN_MODES[new_modes[i]];
+        pin_mode.fn_init(i);
+        board.rw_functions[i] = pin_mode.fn_rw;
     }
     utils_write_binary("modes", board.state.modes, sizeof(pin_mode_nr_t), NUM_PINS);
 }

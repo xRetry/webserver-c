@@ -35,17 +35,17 @@
          9,8,7,6,5,4,3,2,1,0
 
 #define ALLOWED_PINS(...) {__VA_ARGS__}, .pins_allowed_size=NUM_ARGS(__VA_ARGS__)
-#define REGISTER_MODE(n, s, rw, a) { .name=n, .fn_set=s, .fn_rw=rw, .pins_allowed=a }
+#define REGISTER_MODE(n, s, rw, a) { .name=n, .fn_init=s, .fn_rw=rw, .pins_allowed=a }
 
 struct pin_mode_t {
     char *name;
-    err_t (*fn_set)(pin_mode_nr_t);
+    err_t (*fn_init)(pin_mode_nr_t);
     err_t (*fn_rw)(pin_nr_t, double*);
     int pins_allowed[NUM_PINS];
     int pins_allowed_size;
 };
 
-extern struct pin_mode_t pin_modes[];
+extern const struct pin_mode_t PIN_MODES[];
 
 extern const int NUM_MODES;
 

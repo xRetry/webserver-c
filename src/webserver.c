@@ -103,6 +103,7 @@ static void handle_config(struct mg_connection *conn, int ev, void *ev_data, voi
 static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
     struct mg_str body = hm->body;
+
     
     pin_mode_nr_t modes[NUM_PINS];
     for (int i=0; i<NUM_PINS; ++i) {

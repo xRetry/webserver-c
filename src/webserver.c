@@ -13,7 +13,7 @@ static void handle_pins_read(struct mg_connection *conn, int ev, void *ev_data, 
     for (int pin_nr=0; pin_nr<NUM_PINS; ++pin_nr) {
         const bool use_pin = (pin_mask >> pin_nr) & 1;
         if (use_pin) {
-            board_pin_operation(pin_nr, &vals[pin_nr]);
+            board_pin_operation(pin_nr, &vals[pin_nr], PIN_READ);
         } else {
             vals[pin_nr] = 0.;
         }
@@ -42,13 +42,14 @@ static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, voi
         while ((offset = mg_json_next(write, offset, &key, &val)) > 0) {
             if (val.ptr == NULL) { continue; }
 
-            long pin_nr;
-            if (utils_string_to_long(key.ptr+1, &pin_nr)) { continue; }
+            long pin_nr = 0;
+            // The +1 cuts off the `"`
+            if ( ERR(utils_string_to_long(key.ptr+1, &pin_nr)) ) { continue; }
 
-            double pin_val;
-            if (utils_string_to_double(val.ptr, &pin_val)) { continue; }
+            double pin_val = 0;
+            if ( ERR(utils_string_to_double(val.ptr, &pin_val)) ) { continue; }
 
-            board_pin_operation(pin_nr, &pin_val);
+            board_pin_operation(pin_nr, &pin_val, PIN_WRITE);
         }
     }
 
@@ -64,12 +65,12 @@ static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, voi
         while ((offset = mg_json_next(read, offset, &key, &val)) > 0) {
             if (val.ptr == NULL) { continue; }
 
-            long pin_nr;
-            if (utils_string_to_long(val.ptr, &pin_nr) > 0) { continue; }
+            long pin_nr = 0;
+            if ( ERR(utils_string_to_long(val.ptr, &pin_nr)) ) { continue; }
 
 
-            double pin_val;
-            board_pin_operation(pin_nr, &pin_val);
+            double pin_val = 0;
+            if ( ERR(board_pin_operation(pin_nr, &pin_val, PIN_READ)) ) { continue; }
 
             char fmt[] = ",\"%d\":%.10g";
             if (isFirst) {

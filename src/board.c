@@ -1,18 +1,22 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "board.h"
 #include "utils.h"
 
 #include "pin_modes.h"
 
+
 struct board_t {
     struct state_t {
-        pin_mode_nr_t modes[NUM_PINS];
+        pin_mode_nr_t mode_nrs[NUM_PINS];
     } state;
+
     err_t (*rw_functions[NUM_PINS])(pin_nr_t, double*);
 
-    pin_mode_nr_t allowed_modes[NUM_PINS];
+    pin_dir_t directions[NUM_PINS];
 
+    pin_mode_nr_t allowed_modes[NUM_PINS];
 } board;
 
 void allowed_init(void) {
@@ -29,19 +33,20 @@ void allowed_init(void) {
 }
 
 void state_init(void) {
-    err_t err = utils_read_binary("modes", board.state.modes, sizeof(pin_mode_nr_t), NUM_PINS);
+    err_t err = utils_read_binary("modes", board.state.mode_nrs, sizeof(pin_mode_nr_t), NUM_PINS);
     if (err != 0) {
         for (int i=0; i<NUM_PINS; ++i) {
-            board.state.modes[i] = 0;
+            board.state.mode_nrs[i] = 0;
         }
     }
 }
 
 void modes_init(void) {
     for (int i=0; i<NUM_PINS; ++i) {
-        struct pin_mode_t pin_mode = PIN_MODES[board.state.modes[i]];
+        struct pin_mode_t pin_mode = PIN_MODES[board.state.mode_nrs[i]];
         pin_mode.fn_init(i);
         board.rw_functions[i] = pin_mode.fn_rw;
+        board.directions[i] = pin_mode.direction;
     }
 }
 
@@ -51,40 +56,28 @@ void board_init(void) {
     modes_init();
 }
 
-err_t board_pin_operation(pin_nr_t pin_nr, double *val) {
-    if (pin_nr >= NUM_PINS) { return 1; }
+err_t board_pin_operation(pin_nr_t pin_nr, double *val, pin_dir_t dir) {
+    if (pin_nr >= NUM_PINS || board.directions[pin_nr] != dir) { 
+        return 1; 
+    }
 
     board.rw_functions[pin_nr](pin_nr, val);
-
-    printf("pin op: %d - %f\n", pin_nr, *val);
     return 0;
 }
 
-void board_init_pin_modes(const pin_mode_nr_t new_modes[NUM_PINS]) {
+void board_init_pin_modes(const pin_mode_nr_t new_modes_nrs[NUM_PINS]) {
     for (int i=0; i<NUM_PINS; ++i) {
-        struct pin_mode_t pin_mode = PIN_MODES[new_modes[i]];
+        struct pin_mode_t pin_mode = PIN_MODES[new_modes_nrs[i]];
         if (ERR(pin_mode.fn_init(i))) { 
             // TODO(marco): Save errors
             continue; 
         };
         board.rw_functions[i] = pin_mode.fn_rw;
-        board.state.modes[i] = new_modes[i];
+        board.directions[i] = pin_mode.direction;
+        board.state.mode_nrs[i] = new_modes_nrs[i];
     }
-    utils_write_binary("modes", board.state.modes, sizeof(pin_mode_nr_t), NUM_PINS);
+    utils_write_binary("modes", board.state.mode_nrs, sizeof(pin_mode_nr_t), NUM_PINS);
 }
-
-void utils_array_to_json(char *str, char *arr[], int arr_len, int str_len) {
-    strcat(str, "[");
-    for (int i=0; i<arr_len; ++i) {
-        strcat(str, arr[i]);
-
-        char delimiter[] = ",";
-        if (i == arr_len-1) { delimiter[0] = '\0'; }
-        strcat(str, delimiter);
-    }
-    strcat(str, "]");
-}
-
 
 void board_to_html(char content[LEN_HTML_TEMPLATE]) {
     char pins[LEN_JS_PINS] = "";
@@ -96,7 +89,7 @@ void board_to_html(char content[LEN_HTML_TEMPLATE]) {
         char allowed[LEN_JS_PIN_STAT];
         snprintf(allowed, LEN_JS_PIN_STAT, "%d", board.allowed_modes[i]);
         char mode[LEN_JS_PIN_STAT];
-        snprintf(mode, LEN_JS_PIN_STAT, "%d", board.state.modes[i]);
+        snprintf(mode, LEN_JS_PIN_STAT, "%d", board.state.mode_nrs[i]);
 
         char str[LEN_JS_PIN_STATS] = "";
         char *modes[] = {pin, allowed, mode};
@@ -107,8 +100,13 @@ void board_to_html(char content[LEN_HTML_TEMPLATE]) {
         strcat(pins, ",");
     }
 
+    char *names; 
+    if ((names = malloc((LEN_JS_NAMES+1) * sizeof(char))) == NULL) {
+        printf("Memory allocation failed!");
+        exit(0);
+    }
 
-    char names[LEN_JS_NAMES] = "";
+    names[0] = '\0';
     for (int i=0; i<NUM_MODES; ++i) {
         strcat(names, "\"");
         strcat(names, PIN_MODES[i].name);
@@ -117,4 +115,5 @@ void board_to_html(char content[LEN_HTML_TEMPLATE]) {
     }
 
     snprintf(content, LEN_HTML_TEMPLATE, HTML_TEMPLATE, pins, names);
+    free(names);
 }

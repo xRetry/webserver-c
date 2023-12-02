@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 err_t utils_string_to_long(const char *str, long *num) {
     errno = 0;
@@ -55,4 +56,18 @@ err_t utils_read_binary(char *path, void *content, uint32_t size, uint32_t n) {
     fclose(fptr);
     return 0;
 }
+
+void utils_array_to_json(char *str, char *arr[], int arr_len, int str_len) {
+    strcat(str, "[");
+    for (int i=0; i<arr_len; ++i) {
+        strcat(str, arr[i]);
+
+        char delimiter[] = ",";
+        if (i == arr_len-1) { delimiter[0] = '\0'; }
+        strcat(str, delimiter);
+    }
+    strcat(str, "]");
+}
+
+
 

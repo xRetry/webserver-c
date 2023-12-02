@@ -3,6 +3,8 @@
 
 #include "constants.h"
 
+// The following macros are used to determine the amount of
+// macro input arguments at compile time
 #define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__,PP_RSEQ_N())
 #define NUM_ARGS_(...) PP_128TH_ARG(__VA_ARGS__)
 #define PP_128TH_ARG( \
@@ -34,22 +36,35 @@
          19,18,17,16,15,14,13,12,11,10, \
          9,8,7,6,5,4,3,2,1,0
 
+// Helper macro to create an array and count its length at compile time
 #define ALLOWED_PINS(...) {__VA_ARGS__}, .pins_allowed_size=NUM_ARGS(__VA_ARGS__)
-#define REGISTER_MODE(n, s, rw, a) { .name=n, .fn_init=s, .fn_rw=rw, .pins_allowed=a }
 
+// Helper macro to initialize a pin_mod_t struct
+#define REGISTER_MODE(n, d, s, rw, a) { .name=n, .direction=d, .fn_init=s, .fn_rw=rw, .pins_allowed=a }
+
+// The allowed length for the name of a mode
 #define LEN_MODE_NAME 50
-#define NUM_MODES 3
+
+#define pin_dir_t uint8_t
+
+enum pin_dir_t {
+    PIN_DISABLED,
+    PIN_READ,
+    PIN_WRITE
+};
 
 struct pin_mode_t {
     char name[LEN_MODE_NAME];
+    pin_dir_t direction;
     err_t (*fn_init)(pin_mode_nr_t);
     err_t (*fn_rw)(pin_nr_t, double*);
     int pins_allowed[NUM_PINS];
     int pins_allowed_size;
+
 };
 
 extern const struct pin_mode_t PIN_MODES[];
 
-//extern const int NUM_MODES;
+extern const int NUM_MODES;
 
 #endif

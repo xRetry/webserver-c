@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "board.h"
+#include "constants.h"
 #include "utils.h"
 
 #include "pin_modes.h"
@@ -79,41 +80,27 @@ void board_init_pin_modes(const pin_mode_nr_t new_modes_nrs[NUM_PINS]) {
     utils_write_binary("modes", board.state.mode_nrs, sizeof(pin_mode_nr_t), NUM_PINS);
 }
 
-void board_to_html(char content[LEN_HTML_TEMPLATE]) {
-    char pins[LEN_JS_PINS] = "";
-    for (int i=0; i<NUM_PINS; ++i) {
-        if (board.allowed_modes[i] == 0) { continue; }
+void board_modes_as_json(char *json) {
+    json[0] = '\0';
 
-        char pin[LEN_JS_PIN_STAT];
-        snprintf(pin, LEN_JS_PIN_STAT, "%d", i);
-        char allowed[LEN_JS_PIN_STAT];
-        snprintf(allowed, LEN_JS_PIN_STAT, "%d", board.allowed_modes[i]);
-        char mode[LEN_JS_PIN_STAT];
-        snprintf(mode, LEN_JS_PIN_STAT, "%d", board.state.mode_nrs[i]);
-
-        char str[LEN_JS_PIN_STATS] = "";
-        char *modes[] = {pin, allowed, mode};
-
-        utils_array_to_json(str, modes, 3, 3);
-
-        strcat(pins, str);
-        strcat(pins, ",");
-    }
-
-    char *names; 
-    if ((names = malloc((LEN_JS_NAMES+1) * sizeof(char))) == NULL) {
-        printf("Memory allocation failed!");
-        exit(0);
-    }
-
-    names[0] = '\0';
+    strcat(json, "[");
     for (int i=0; i<NUM_MODES; ++i) {
-        strcat(names, "\"");
-        strcat(names, PIN_MODES[i].name);
-        strcat(names, "\"");
-        strcat(names, ",");
-    }
+        char *comma = i == 0 ? "\0" : ",";
+        strcat(json, comma);
 
-    snprintf(content, LEN_HTML_TEMPLATE, HTML_TEMPLATE, pins, names);
-    free(names);
+        char json_allowed[STRLEN_JSON_ALLOWED] = "[";
+        for (int j=0; j<PIN_MODES[i].pins_allowed_size; ++j) {
+            char *c = j == 0 ? "\0" : ",";
+            strcat(json_allowed, c);
+            char pin_nr[STRLEN_PIN_NR];
+            snprintf(pin_nr, STRLEN_PIN_NR, "%d", PIN_MODES[i].pins_allowed[j]);
+            strcat(json_allowed, pin_nr);
+        }
+        strcat(json_allowed, "]");
+
+        char json_mode[STRLEN_JSON_MODES];
+        snprintf(json_mode, STRLEN_JSON_MODES, TEMPLATE_JSON_MODE, i, PIN_MODES[i].name, json_allowed);
+        strcat(json, json_mode);
+    }
+    strcat(json, "]");
 }

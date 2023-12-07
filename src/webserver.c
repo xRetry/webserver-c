@@ -87,24 +87,37 @@ static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, voi
     strcat(response, " }");
 
     mg_ws_send(c, response, strlen(response), WEBSOCKET_OP_TEXT);
-
 }
 
 static void handle_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
-    char content[LEN_HTML_TEMPLATE];
-    board_to_html(content);
     mg_http_reply(
         conn, 
         200, 
         "Content-Type: text/html\r\n", 
-        content
+        TEMPLATE_HTML_CONFIG
     );
 };
+
+static void handle_modes(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
+    //char *json; 
+    //if ((json = malloc((STRLEN_JSON_MODES+1) * sizeof(char))) == NULL) {
+    //    printf("Memory allocation failed!");
+    //    exit(0);
+    //}
+    char json[STRLEN_JSON_MODES];
+    board_modes_as_json(json);
+    mg_http_reply(
+        conn, 
+        200, 
+        "Content-Type: application/json\r\n", 
+        json
+    );
+    //free(json);
+}
 
 static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
     struct mg_str body = hm->body;
-
     
     pin_mode_nr_t modes[NUM_PINS];
     for (int i=0; i<NUM_PINS; ++i) {
@@ -152,6 +165,8 @@ static void router(struct mg_connection *c, int ev, void *ev_data, void *fn_data
             handle_config(c, ev, ev_data, fn_data);
         } else if (mg_http_match_uri(hm, "/set-config")) {
             handle_set_config(c, ev, ev_data, fn_data);
+        } else if (mg_http_match_uri(hm, "/modes")) {
+            handle_modes(c, ev, ev_data, fn_data);
         } else if (mg_match(hm->uri, mg_str("/pins/read/*"), params)) {
             handle_ws_request(c, hm, 'r', params);
         } else if (mg_match(hm->uri, mg_str("/pins/write/*"), params)) {

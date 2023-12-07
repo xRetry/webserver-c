@@ -43,7 +43,7 @@
 #define REGISTER_MODE(n, d, s, rw, a) { .name=n, .direction=d, .fn_init=s, .fn_rw=rw, .pins_allowed=a }
 
 // The allowed length for the name of a mode
-#define LEN_MODE_NAME 50
+#define STRLEN_MODE_NAME 50
 
 #define pin_dir_t uint8_t
 
@@ -54,7 +54,7 @@ enum pin_dir_t {
 };
 
 struct pin_mode_t {
-    char name[LEN_MODE_NAME];
+    char name[STRLEN_MODE_NAME];
     pin_dir_t direction;
     err_t (*fn_init)(pin_mode_nr_t);
     err_t (*fn_rw)(pin_nr_t, double*);

@@ -11,7 +11,7 @@ typedef uint8_t pin_mode_nr_t;
 typedef uint8_t pin_nr_t;
 typedef uint8_t err_t;
 
-#define HTML_TEMPLATE "\
+#define TEMPLATE_HTML_CONFIG "\
     <!DOCTYPE html>\
     <html lang=\"en\">\
         <head>\
@@ -29,12 +29,12 @@ typedef uint8_t err_t;
             </style>\
         </head>\
         <body>\
-            <form method=\"post\" action=\"set-config\">\
+            <form method=\"post\" action=\"config/set\">\
                 <input type=\"submit\" value=\"Save\"/>\
             </form>\
         <script>\
-            const PINS = [%s];\
-            const MODE_DESCS = [%s];\
+            const PINS = [7, 1];\
+            const MODE_DESCS = [\'a\', \'b\'];\
             let form = document.querySelector('form');\
             for (const [num, modes, mode] of PINS.reverse()) {\
                 let select = `<select name=\"${num}\">`;\
@@ -51,6 +51,8 @@ typedef uint8_t err_t;
         </body>\
     </html>\
 "
+
+#define TEMPLATE_JSON_MODE "{ \"mode_nr\": %d, \"name\": \"%s\", \"pins\": %s }"
 
 
 #define OK(x) x == 0

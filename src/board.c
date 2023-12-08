@@ -104,3 +104,18 @@ void board_modes_as_json(char *json) {
     }
     strcat(json, "]");
 }
+
+void board_active_as_json(char *json) {
+    json[0] = '\0';
+
+    strcat(json, "{");
+    for (int i=0; i<NUM_PINS; ++i) {
+        char *comma = i == 0 ? "\0" : ",";
+        strcat(json, comma);
+
+        char json_mode[STRLEN_JSON_ACTIVE_ENTRY];
+        snprintf(json_mode, STRLEN_JSON_ACTIVE_ENTRY, "\"%d\":%d", i, board.state.mode_nrs[i]);
+        strcat(json, json_mode);
+    }
+    strcat(json, "}");
+}

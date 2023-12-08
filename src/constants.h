@@ -12,48 +12,59 @@ typedef uint8_t pin_nr_t;
 typedef uint8_t err_t;
 
 #define TEMPLATE_HTML_CONFIG "\
-    <!DOCTYPE html>\
-    <html lang=\"en\">\
-        <head>\
-            <title>Board Configuration</title>\
-            <style>\
-                form {\
-                    display: grid;\
-                    grid-template-columns: 1fr 2fr;\
-                    gap: 10px;\
-                    width: 300px;\
-                    margin-top: 30px;\
-                    margin-left: auto;\
-                    margin-right: auto;\
-                }\
-            </style>\
-        </head>\
-        <body>\
-            <form method=\"post\" action=\"config/set\">\
-                <input type=\"submit\" value=\"Save\"/>\
-            </form>\
-        <script>\
-            const PINS = [7, 1];\
-            const MODE_DESCS = [\'a\', \'b\'];\
-            let form = document.querySelector('form');\
-            for (const [num, modes, mode] of PINS.reverse()) {\
-                let select = `<select name=\"${num}\">`;\
-                let i = 0;\
-                for (const m of modes.toString(2).split('').reverse()) {\
-                    const sel = i === mode ? ' selected' : '';\
-                    if (m > 0) { select += `<option value=\"${i}\"${sel}>${MODE_DESCS[i]}</option>`; }\
-                    ++i;\
-                }\
-                form.insertAdjacentHTML('afterbegin', select+'</select>');\
-                form.insertAdjacentHTML('afterbegin', `<label>Pin ${num}</label>`);\
+<!DOCTYPE html>\
+<html lang=\"en\">\
+<head>\
+    <title>Board Configuration</title>\
+    <style>\
+        form {\
+            display: grid;\
+            grid-template-columns: 1fr 2fr;\
+            gap: 10px;\
+            width: 300px;\
+            margin-top: 30px;\
+            margin-left: auto;\
+            margin-right: auto;\
+        }\
+    </style>\
+</head>\
+<body>\
+    <form method=\"post\" action=\"/api/config\">\
+        <input type=\"submit\" value=\"Save\"/>\
+    </form>\
+<script>\
+    const modes = %s;\
+    const active = %s;\
+    function build_selects(modes) {\
+        const form = document.querySelector('form');\
+\
+        let pins = Array.from(new Set(modes.flatMap((mode) => mode.pins))).sort();\
+        for (const pin of pins.reverse()) {\
+            form.insertAdjacentHTML('afterbegin', `<select name=\"${pin}\"><select>`);\
+            form.insertAdjacentHTML('afterbegin', `<label>Pin ${pin}</label>`);\
+        }\
+\
+        modes.sort((a, b) => b.mode_nr - a.mode_nr);\
+        for (const mode of modes) {\
+            for (const pin of mode.pins) {\
+                const select = document.querySelector(`select[name=\"${pin}\"]`);\
+                select.insertAdjacentHTML('afterbegin', `<option value=\"${mode.mode_nr}\">${mode.name}</option>`);\
             }\
-        </script>\
-        </body>\
-    </html>\
+        }\
+    }\
+\
+    function set_active(active) {\
+        for (const [pin, mode] of Object.entries(active)) {\
+            let select = document.querySelector(`select[name=\"${pin}\"]`);\
+            if (select != null) { select.value = mode; }\
+        }\
+    }\
+</script>\
+</body>\
+</html>\
 "
 
 #define TEMPLATE_JSON_MODE "{ \"mode_nr\": %d, \"name\": \"%s\", \"pins\": %s }"
-
 
 #define OK(x) x == 0
 #define ERR(x) !(OK(x))

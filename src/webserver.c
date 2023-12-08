@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "board.h"
 #include "utils.h"
+#include <stdio.h>
 
 static void handle_pins_read(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
     struct mg_ws_message *ws_msg = (struct mg_ws_message *) ev_data;
@@ -90,57 +91,112 @@ static void handle_pins_json(struct mg_connection *c, int ev, void *ev_data, voi
 }
 
 static void handle_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
+    const int STRLEN_BODY = strlen(TEMPLATE_HTML_CONFIG)+STRLEN_JSON_MODES+STRLEN_JSON_ACTIVE+1;
+    char *body;
+    if ((body = malloc(sizeof(char)*STRLEN_BODY)) == NULL) {
+        printf("Error allocating HTML body");
+        return;
+    }
+    char modes[STRLEN_JSON_MODES];
+    board_modes_as_json(modes);
+
+    char active[STRLEN_JSON_ACTIVE];
+    board_active_as_json(active);
+
+    snprintf(body, STRLEN_BODY, TEMPLATE_HTML_CONFIG, modes, active);
+
+    // TODO(marco): Fix stack overflow
     mg_http_reply(
         conn, 
         200, 
         "Content-Type: text/html\r\n", 
-        TEMPLATE_HTML_CONFIG
+        body
     );
+
+    free(body);
 };
 
-static void handle_modes(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
-    //char *json; 
-    //if ((json = malloc((STRLEN_JSON_MODES+1) * sizeof(char))) == NULL) {
-    //    printf("Memory allocation failed!");
-    //    exit(0);
-    //}
-    char json[STRLEN_JSON_MODES];
-    board_modes_as_json(json);
-    mg_http_reply(
-        conn, 
-        200, 
-        "Content-Type: application/json\r\n", 
-        json
-    );
-    //free(json);
-}
-
-static void handle_set_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
-    struct mg_http_message *hm = (struct mg_http_message *) ev_data;
-    struct mg_str body = hm->body;
-    
-    pin_mode_nr_t modes[NUM_PINS];
-    for (int i=0; i<NUM_PINS; ++i) {
-        char key[3];
-        snprintf(key, 3, "%d", i);
-
-        int mode = 0;
-        struct mg_str val = mg_http_var(body, mg_str(key));
-        if (val.len > 0) {
-            char* end;
-            mode = strtol(val.ptr, &end, 10);
-
-        }
-        modes[i] = mode;
+static void handle_api_modes(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
+    struct mg_http_message *msg = (struct mg_http_message *) ev_data;
+    if (mg_strcmp(msg->method, mg_str("GET")) == 0) {
+        char json[STRLEN_JSON_MODES];
+        board_modes_as_json(json);
+        mg_http_reply(
+            conn, 
+            200, 
+            "Content-Type: application/json\r\n", 
+            json
+        );
+        return;
     }
 
-    board_init_pin_modes(modes);
+    mg_http_reply(
+        conn, 
+        405, 
+        "Allow: GET\r\n", 
+        "Method Not Allowed"
+    );
+}
+
+static void handle_api_active(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
+    struct mg_http_message *msg = (struct mg_http_message *) ev_data;
+    if (mg_strcmp(msg->method, mg_str("GET")) == 0) {
+        struct mg_http_message *hm = (struct mg_http_message *) ev_data;
+        char json[STRLEN_JSON_ACTIVE];
+        board_active_as_json(json);
+
+        mg_http_reply(
+            conn, 
+            200, 
+            "Content-Type: application/json\r\n", 
+            json
+        );
+        return;
+    }
 
     mg_http_reply(
         conn, 
-        303, // Status code: `See Other`
-        "Location: /config\r\n", 
-        ""
+        405, 
+        "Allow: GET\r\n", 
+        "Method Not Allowed"
+    );
+}
+
+static void handle_api_config(struct mg_connection *conn, int ev, void *ev_data, void *fn_data) {
+    struct mg_http_message *msg = (struct mg_http_message *) ev_data;
+    if (mg_strcmp(msg->method, mg_str("POST")) == 0) {
+        struct mg_str body = msg->body;
+        
+        pin_mode_nr_t modes[NUM_PINS];
+        for (int i=0; i<NUM_PINS; ++i) {
+            char key[3];
+            snprintf(key, 3, "%d", i);
+
+            int mode = 0;
+            struct mg_str val = mg_http_var(body, mg_str(key));
+            if (val.len > 0) {
+                char* end;
+                mode = strtol(val.ptr, &end, 10);
+
+            }
+            modes[i] = mode;
+        }
+
+        board_init_pin_modes(modes);
+
+        mg_http_reply(
+            conn, 
+            303, // Status code: `See Other`
+            "Location: /config\r\n", 
+            "See Other"
+        );
+    }
+
+    mg_http_reply(
+        conn, 
+        405, 
+        "Allow: POST\r\n", 
+        "Method Not Allowed"
     );
 }
 
@@ -163,15 +219,17 @@ static void router(struct mg_connection *c, int ev, void *ev_data, void *fn_data
 
         if (mg_http_match_uri(hm, "/config")) {
             handle_config(c, ev, ev_data, fn_data);
-        } else if (mg_http_match_uri(hm, "/set-config")) {
-            handle_set_config(c, ev, ev_data, fn_data);
-        } else if (mg_http_match_uri(hm, "/modes")) {
-            handle_modes(c, ev, ev_data, fn_data);
-        } else if (mg_match(hm->uri, mg_str("/pins/read/*"), params)) {
+        } else if (mg_http_match_uri(hm, "/api/config")) {
+            handle_api_config(c, ev, ev_data, fn_data);
+        } else if (mg_http_match_uri(hm, "/api/modes")) {
+            handle_api_modes(c, ev, ev_data, fn_data);
+        } else if (mg_http_match_uri(hm, "/api/active")) {
+            handle_api_active(c, ev, ev_data, fn_data);
+        } else if (mg_match(hm->uri, mg_str("/ws/pins/read/*"), params)) {
             handle_ws_request(c, hm, 'r', params);
-        } else if (mg_match(hm->uri, mg_str("/pins/write/*"), params)) {
+        } else if (mg_match(hm->uri, mg_str("/ws/pins/write/*"), params)) {
             handle_ws_request(c, hm, 'w', params);
-        } else if (mg_http_match_uri(hm, "/pins/json")) {
+        } else if (mg_http_match_uri(hm, "/ws/pins")) {
             c->data[0] = 'j';
             mg_ws_upgrade(c, hm, NULL);
         } else {

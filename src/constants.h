@@ -59,6 +59,9 @@ typedef uint8_t err_t;
             if (select != null) { select.value = mode; }\
         }\
     }\
+\
+    build_selects(modes);\
+    set_active(active);\
 </script>\
 </body>\
 </html>\

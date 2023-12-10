@@ -105,7 +105,6 @@ static void handle_config(struct mg_connection *conn, int ev, void *ev_data, voi
 
     snprintf(body, STRLEN_BODY, TEMPLATE_HTML_CONFIG, modes, active);
 
-    // TODO(marco): Fix stack overflow
     mg_http_reply(
         conn, 
         200, 

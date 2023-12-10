@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "board.h"
 #include "constants.h"
 #include "utils.h"
@@ -69,7 +70,16 @@ err_t board_pin_operation(pin_nr_t pin_nr, double *val, pin_dir_t dir) {
 void board_init_pin_modes(const pin_mode_nr_t new_modes_nrs[NUM_PINS]) {
     for (int i=0; i<NUM_PINS; ++i) {
         struct pin_mode_t pin_mode = PIN_MODES[new_modes_nrs[i]];
-        if (ERR(pin_mode.fn_init(i))) { 
+
+        bool is_mode_allowed = false;
+        for (int j=0; j<pin_mode.pins_allowed_size; ++j) {
+            if (pin_mode.pins_allowed[j] == i) {
+                is_mode_allowed = true;
+                break;
+            }
+        }
+
+        if (!is_mode_allowed || ERR(pin_mode.fn_init(i))) { 
             // TODO(marco): Save errors
             continue; 
         };

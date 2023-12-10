@@ -176,7 +176,6 @@ static void handle_api_config(struct mg_connection *conn, int ev, void *ev_data,
             if (val.len > 0) {
                 char* end;
                 mode = strtol(val.ptr, &end, 10);
-
             }
             modes[i] = mode;
         }
